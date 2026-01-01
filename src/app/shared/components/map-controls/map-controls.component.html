@@ -1,0 +1,23 @@
+<div class="map-controls" dir="rtl">
+  <button
+    *ngFor="let control of controls"
+    [id]="control.id"
+    [title]="control.tooltip"
+    class="control-btn"
+    (click)="executeControl(control)"
+    [class.hidden]="control.visible === false">
+    <!-- SVG Icon -->
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class="control-icon"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor">
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        [attr.d]="control.icon" />
+    </svg>
+  </button>
+</div>

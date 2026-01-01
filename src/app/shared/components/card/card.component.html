@@ -1,0 +1,9 @@
+<div
+  class="bg-white  transition-all duration-300 h-full rounded-xl border shadow-sm"
+  [class.cursor-pointer]="clickable"
+  [class.hover:scale-[1.02]]="clickable"
+  [style.box-shadow.hover]="hoverable ? '0 8px 20px rgba(0, 0, 0, 0.2)' : '0 4px 12px rgba(0, 0, 0, 0.15)'">
+  <div class="p-[4%] h-full flex flex-col">
+    <ng-content></ng-content>
+  </div>
+</div>

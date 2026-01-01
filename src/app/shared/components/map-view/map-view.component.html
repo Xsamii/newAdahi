@@ -1,0 +1,55 @@
+<div
+  id="mapContainer"
+  class="w-full bg-gray-200 rounded-lg relative"
+  [style.height]="height">
+  <!-- Placeholder for ArcGIS Map - GIS team will implement -->
+
+  <!-- Map Controls -->
+  <app-map-controls
+    (layerListToggle)="toggleLayerList()"
+    (baseMapToggle)="toggleBaseMap()"
+    (legendToggle)="toggleLegend()">
+  </app-map-controls>
+
+  <!-- Layer List Panel -->
+  <div
+    [class.hidden]="!isLayerListVisible"
+    class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-xl p-4 z-50 max-h-[60%] overflow-auto"
+    style="min-width: 400px; max-width: 600px;">
+    <div class="flex justify-between items-center mb-3">
+      <h3 class="text-lg font-bold text-gray-800">الطبقات</h3>
+      <button
+        (click)="toggleLayerList()"
+        class="text-gray-600 hover:text-gray-800 text-xl">&times;</button>
+    </div>
+    <div id="layerListDiv"></div>
+  </div>
+
+  <!-- BaseMap Panel -->
+  <div
+    [class.hidden]="!isBaseMapVisible"
+    class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-xl p-4 z-50 max-h-[60%] overflow-auto"
+    style="min-width: 400px; max-width: 600px;">
+    <div class="flex justify-between items-center mb-3">
+      <h3 class="text-lg font-bold text-gray-800">خرائط الأساس</h3>
+      <button
+        (click)="toggleBaseMap()"
+        class="text-gray-600 hover:text-gray-800 text-xl">&times;</button>
+    </div>
+    <div id="baseMapDiv"></div>
+  </div>
+
+  <!-- Legend Panel -->
+  <div
+    [class.hidden]="!isLegendVisible"
+    class="absolute bottom-4 left-4 bg-white rounded-lg shadow-xl p-4 z-50 max-h-[60%] overflow-auto"
+    style="min-width: 250px; max-width: 400px;">
+    <div class="flex justify-between items-center mb-3">
+      <h3 class="text-lg font-bold text-gray-800">وسيلة الإيضاح</h3>
+      <button
+        (click)="toggleLegend()"
+        class="text-gray-600 hover:text-gray-800 text-xl">&times;</button>
+    </div>
+    <div id="legendContainer"></div>
+  </div>
+</div>

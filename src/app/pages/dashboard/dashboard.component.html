@@ -1,0 +1,136 @@
+<div class="h-[calc(100vh-6rem)] overflow-hidden px-6 py-2" dir="rtl">
+  <!-- Main White Card Container -->
+  <div class="bg-white rounded-lg shadow-lg p-2 h-full flex flex-col overflow-hidden">
+
+    <!-- Top Section: 5 Cards in a Row -->
+    <div *ngIf="statistics" class="grid grid-cols-5 gap-3 pb-2 mb-2 border-b border-gray-200">
+
+      <!-- Card 1: عدد الأنفاق -->
+      <app-stat-card
+        [title]="'عدد الأنفاق'"
+        [value]="statistics.totalTunnels"
+        [subtitle]="'نفق'">
+      </app-stat-card>
+
+      <!-- Card 2: أطوال الأنفاق -->
+      <app-stat-card
+        [title]="'أطوال الأنفاق'"
+        [value]="statistics.totalLength"
+        [subtitle]="'كم'">
+      </app-stat-card>
+
+      <!-- Card 3: أعداد الملاحظات بالفحص البصري -->
+      <app-stat-card
+        [title]="'أعداد الملاحظات بالفحص البصري'"
+        [value]="totalStats.totalNotes"
+        [subtitle]="'ملاحظة'">
+      </app-stat-card>
+
+      <!-- Card 4: اعداد الأصول بالأنفاق -->
+      <app-stat-card
+        [title]="'اعداد الأصول بالأنفاق'"
+        [value]="totalStats.totalAssets"
+        [subtitle]="'أصل'">
+      </app-stat-card>
+
+      <!-- Card 5: ملاك الانفاق (Network Breakdown) -->
+      <div class="h-full flex flex-col justify-start p-3 border-2 border-gray-200 rounded-lg">
+        <h3 class="text-[1.2vw] text-gray-700 font-bold text-center mb-2">
+          مٌلاك الأنفاق
+        </h3>
+
+        <div class="space-y-1 pr-3">
+          <div *ngFor="let category of categories" class="flex justify-between items-center">
+            <span class="text-gray-600 text-[0.8vw]  text-right">{{ category.title }}</span>
+            <span class="text-primary font-semibold text-[0.8vw]">{{ category.count }}</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Donut Charts Section -->
+    <div class="grid grid-cols-3 gap-3 mt-2 p-3">
+
+      <!-- Donut Chart 1: Tunnel Distribution by Owner -->
+      <app-card [clickable]="false" [hoverable]="false">
+        <div class="flex flex-col">
+          <h3 class="text-base font-bold text-gray-900 mb-2 text-center">
+            توزيع الأنفاق حسب المالك
+            <span class="text-xs text-gray-500 font-normal block mt-1">
+              النسبة المئوية = عدد أنفاق المالك ÷ ∑ عدد الأنفاق
+            </span>
+          </h3>
+          <div id="chart1"></div>
+        </div>
+      </app-card>
+
+      <!-- Donut Chart 2: Assets Distribution -->
+      <app-card [clickable]="false" [hoverable]="false">
+        <div class="flex flex-col">
+          <h3 class="text-base font-bold text-gray-900 mb-2 text-center">
+            توزيع الأصول
+            <span class="text-xs text-gray-500 font-normal block mt-1">
+              النسبة المئوية = عدد أصول الفئة ÷ ∑ عدد الأصول
+            </span>
+          </h3>
+          <div id="chart2"></div>
+        </div>
+      </app-card>
+
+      <!-- Donut Chart 3: Notes Distribution -->
+      <app-card [clickable]="false" [hoverable]="false">
+        <div class="flex flex-col">
+          <h3 class="text-base font-bold text-gray-900 mb-2 text-center">
+            توزيع الملاحظات
+            <span class="text-xs text-gray-500 font-normal block mt-1">
+              النسبة المئوية = عدد ملاحظات الفئة ÷ ∑ عدد الملاحظات
+            </span>
+          </h3>
+          <div id="chart3"></div>
+        </div>
+      </app-card>
+
+      <!-- Donut Chart 4: Tunnel Length Distribution by Owner -->
+      <app-card [clickable]="false" [hoverable]="false">
+        <div class="flex flex-col">
+          <h3 class="text-base font-bold text-gray-900 mb-2 text-center">
+            توزيع أطوال الأنفاق حسب الملاك
+            <span class="text-xs text-gray-500 font-normal block mt-1">
+              النسبة المئوية = طول أنفاق المالك ÷ ∑ أطوال الأنفاق (كم)
+            </span>
+          </h3>
+          <div id="chart4"></div>
+        </div>
+      </app-card>
+
+      <!-- Donut Chart 5: Inspection Type Distribution -->
+      <app-card [clickable]="false" [hoverable]="false">
+        <div class="flex flex-col">
+          <h3 class="text-base font-bold text-gray-900 mb-2 text-center">
+            توزيع أنواع الفحص
+            <span class="text-xs text-gray-500 font-normal block mt-1">
+              النسبة المئوية = عدد الفحوص من النوع ÷ ∑ عدد الفحوص
+            </span>
+          </h3>
+          <div id="chart5"></div>
+        </div>
+      </app-card>
+
+      <!-- Donut Chart 6: Danger Level Distribution -->
+      <app-card [clickable]="false" [hoverable]="false">
+        <div class="flex flex-col">
+          <h3 class="text-base font-bold text-gray-900 mb-2 text-center">
+            مستوى الخطورة
+            <span class="text-xs text-gray-500 font-normal block mt-1">
+              النسبة المئوية = عدد الأصول في مستوى الخطورة ÷ ∑ عدد الأصول
+            </span>
+          </h3>
+          <div id="chart6"></div>
+        </div>
+      </app-card>
+
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,19 @@
+<!-- Loading Screen -->
+<app-loading-screen *ngIf="isLoading"></app-loading-screen>
+
+<!-- Main App Content -->
+<div class="min-h-screen bg-gray-50 flex flex-col" *ngIf="!isLoading">
+  <!-- Full-width Header -->
+  <app-header></app-header>
+
+  <!-- Content Area: Sidebar + Main Content -->
+  <div class="flex flex-1">
+    <!-- Sidebar -->
+    <app-sidebar class="flex-shrink-0"></app-sidebar>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col">
+      <router-outlet />
+    </div>
+  </div>
+</div>

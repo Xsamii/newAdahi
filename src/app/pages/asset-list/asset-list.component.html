@@ -1,0 +1,90 @@
+<div class="h-[calc(100vh-5rem)] px-6 py-2" dir="rtl">
+  <!-- Main White Card Container -->
+  <div class="bg-white rounded-lg shadow-lg p-4 h-full flex flex-col">
+    <!-- Header -->
+    <div class="mb-3 flex-shrink-0">
+      <h1 class="text-2xl font-bold text-gray-900">{{ ownerName }}</h1>
+    </div>
+
+    <!-- Utility Cards Section -->
+    <div *ngIf="utilityCard && utilityCard.length > 0" class="mb-3 flex-shrink-0">
+      <div class="grid grid-cols-5 gap-3">
+        <div
+          *ngFor="let utility of utilityCard"
+          class="bg-white rounded-lg border-2 border-gray-200 p-3 flex flex-col items-center">
+          <!-- Utility Icon -->
+          <img
+            [src]="getUtilityIcon(utility.name)"
+            alt="{{ utility.name }}"
+            class="w-10 h-10 mb-2">
+
+          <!-- Utility Name -->
+          <h3 class="text-sm font-bold text-gray-900 mb-2 text-center">
+            {{ utility.name }}
+          </h3>
+
+          <!-- Stats -->
+          <div class="w-full space-y-2">
+            <div class="flex flex-col items-center">
+              <span class="text-xs text-gray-600 mb-1">الملاحظات</span>
+              <span class="text-base font-bold text-primary">{{ formatNumber(utility.notesCount) }}</span>
+            </div>
+            <div class="flex flex-col items-center">
+              <span class="text-xs text-gray-600 mb-1">الملاحظات/الطول</span>
+              <span class="text-base font-bold text-primary">{{ getPercentageDisplay(utility.notesCount) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content: Tunnel List on Left, Map on Right -->
+    <div class="flex gap-4 flex-1 min-h-0">
+      <!-- Tunnel List Section -->
+      <div class="w-1/4 flex flex-col min-h-0">
+        <div class="bg-white rounded-lg border-2 border-gray-200 h-full flex flex-col min-h-0">
+          <!-- List Header -->
+          <div class="px-4 py-3 border-b border-gray-200 flex-shrink-0">
+            <h2 class="text-lg font-bold text-gray-900">قائمة الأنفاق</h2>
+            <p class="text-sm text-gray-600">{{ tunnels.length }} نفق</p>
+          </div>
+
+          <!-- Scrollable Tunnel List -->
+          <div class="overflow-y-auto min-h-0 custom-scrollbar">
+            <div
+              *ngFor="let tunnel of tunnels; let i = index"
+              (click)="navigateToTunnel(tunnel.ID_Number)"
+              class="px-4 py-3 border-b border-gray-100 cursor-pointer hover:opacity-90 transition-all relative"
+              [style.background-color]="getTunnelColor(i)">
+              <!-- Color indicator bar on the right -->
+              <div class="absolute right-0 top-0 bottom-0 w-1" [style.background-color]="getTunnelColor(i, true)"></div>
+
+              <h3 class="text-base font-semibold text-gray-800 mb-2">
+                {{ tunnel.ARABICNAME }}
+              </h3>
+              <div class="space-y-1">
+                <div class="flex justify-between items-center text-sm">
+                  <span class="text-gray-600">الطول:</span>
+                  <span class="text-gray-700 font-medium">{{ formatNumberWithKm(tunnel["الطول_كم"]) }}</span>
+                </div>
+                <div class="flex justify-between items-center text-sm">
+                  <span class="text-gray-600">الأصول:</span>
+                  <span class="text-primary font-semibold">{{ formatNumber(getTunnelStats(tunnel.ARABICNAME)?.assetsCount) }}</span>
+                </div>
+                <div class="flex justify-between items-center text-sm">
+                  <span class="text-gray-600">الملاحظات:</span>
+                  <span class="text-primary font-semibold">{{ formatNumber(getTunnelStats(tunnel.ARABICNAME)?.notesCount) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Map Section -->
+      <div class="w-3/4 min-h-0">
+        <app-map-view height="100%"></app-map-view>
+      </div>
+    </div>
+  </div>
+</div>

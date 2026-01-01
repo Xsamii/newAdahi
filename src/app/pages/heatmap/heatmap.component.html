@@ -1,0 +1,95 @@
+<div class="h-[calc(100vh-5rem)] px-6 py-2" dir="rtl">
+  <!-- Main White Card Container -->
+  <div class="bg-white rounded-lg shadow-lg p-4 h-full flex flex-col">
+
+    <!-- Header -->
+    <div class="mb-3 flex-shrink-0">
+      <h1 *ngIf="ownerName" class="text-2xl font-bold text-gray-900">{{ ownerName }}</h1>
+      <h1 *ngIf="!ownerName" class="text-2xl font-bold text-gray-900">الخريطة الحرارية الكلية</h1>
+    </div>
+
+    <!-- Utility Cards Section at Top -->
+    <div *ngIf="utilityCard && utilityCard.length > 0" class="mb-4 flex-shrink-0">
+      <div class="grid grid-cols-5 gap-3">
+        <div
+          *ngFor="let utility of utilityCard; let i = index"
+          (click)="selectUtility(i)"
+          class="bg-white rounded-lg border-2 p-3 flex flex-col items-center cursor-pointer transition-all"
+          [class.border-primary]="isUtilitySelected(i)"
+          [class.border-gray-200]="!isUtilitySelected(i)"
+          [class.bg-primary]="isUtilitySelected(i)"
+          [class.bg-opacity-10]="isUtilitySelected(i)">
+
+          <!-- Utility Icon -->
+          <img
+            [src]="getUtilityIcon(utility.name)"
+            alt="{{ utility.name }}"
+            class="w-10 h-10 mb-2">
+
+          <!-- Utility Name -->
+          <h3 class="text-sm font-bold text-gray-900 mb-2 text-center">
+            {{ utility.name }}
+          </h3>
+
+          <!-- Stats -->
+          <div class="w-full space-y-2">
+            <div class="flex flex-col items-center">
+              <span class="text-xs text-gray-600 mb-1">الملاحظات</span>
+              <span class="text-base font-bold text-primary">{{ formatNumber(utility.notesCount) }}</span>
+            </div>
+            <div class="flex flex-col items-center">
+              <span class="text-xs text-gray-600 mb-1">الملاحظات/الطول</span>
+              <span class="text-base font-bold text-primary">{{ getPercentageDisplay(utility.notesCount) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content: List on Left, Map on Right -->
+    <div class="flex gap-4 flex-1 min-h-0">
+      <!-- Owners/Tunnels List Section -->
+      <div class="w-1/4 flex flex-col min-h-0">
+        <div class="bg-white rounded-lg border-2 border-gray-200 h-full flex flex-col min-h-0">
+          <!-- List Header -->
+          <div class="px-4 py-3 border-b border-gray-200 flex-shrink-0">
+            <h2 class="text-lg font-bold text-gray-900">قائمة الأنفاق</h2>
+            <p class="text-sm text-gray-600">{{ tunnelsList.length }} نفق</p>
+          </div>
+
+          <!-- Scrollable List -->
+          <div class="overflow-y-auto min-h-0 custom-scrollbar">
+            <!-- Tunnels List -->
+            <div
+              *ngFor="let tunnel of tunnelsList; let i = index"
+              class="px-4 py-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-all">
+              <h3 class="text-base font-semibold text-gray-800 mb-2">
+                {{ tunnel.name }}
+              </h3>
+              <div class="space-y-1">
+                <div class="flex justify-between items-center text-sm">
+                  <span class="text-gray-600">الطول:</span>
+                  <span class="text-gray-700 font-medium">{{ formatDistance(tunnel.distance) }}</span>
+                </div>
+                <div class="flex justify-between items-center text-sm">
+                  <span class="text-gray-600">الملاحظات:</span>
+                  <span class="text-primary font-semibold">{{ formatNumber(tunnel.notesCount) }}</span>
+                </div>
+                <div class="flex justify-between items-center text-sm">
+                  <span class="text-gray-600">الملاحظات/الطول:</span>
+                  <span class="text-primary font-bold">{{ formatPercentage(tunnel.percentage) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Map Section -->
+      <div class="w-3/4 min-h-0">
+        <app-map-view height="100%"></app-map-view>
+      </div>
+    </div>
+
+  </div>
+</div>

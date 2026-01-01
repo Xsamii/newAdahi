@@ -1,0 +1,97 @@
+<div *ngIf="tunnel" class="h-[calc(100vh-5rem)] overflow-hidden px-6 py-4" dir="rtl">
+  <!-- Main White Card Container -->
+  <div class="bg-white rounded-lg shadow-lg p-4 h-full flex flex-col">
+
+    <!-- Info Bar (Full Width) -->
+    <div class="rounded-lg p-4 mb-3 flex-shrink-0">
+      <div class="grid grid-cols-6 gap-4 text-center">
+        <div>
+          <p class="text-[1vw] text-gray-600 mb-2 font-semibold">اسم النفق</p>
+          <p class="text-[0.95vw] font-bold text-primary">{{ tunnel.ARABICNAME }}</p>
+        </div>
+        <div>
+          <p class="text-[1vw] text-gray-600 mb-2 font-semibold">المالك</p>
+          <p class="text-[0.95vw] font-bold text-primary">{{ tunnel.Owner }}</p>
+        </div>
+        <div>
+          <p class="text-[1vw] text-gray-600 mb-2 font-semibold">طوله</p>
+          <p class="text-[0.95vw] font-bold text-primary">{{ formatNumberWithKm(tunnel["الطول_كم"]) }}</p>
+        </div>
+        <div>
+          <p class="text-[1vw] text-gray-600 mb-2 font-semibold">عدد الاصول</p>
+          <p class="text-[0.95vw] font-bold text-primary">{{ formatNumber(getTunnelStats(tunnel.ARABICNAME)?.assetsCount) }}</p>
+        </div>
+        <div>
+          <p class="text-[1vw] text-gray-600 mb-2 font-semibold">عدد الملاحظات</p>
+          <p class="text-[0.95vw] font-bold text-primary">{{ formatNumber(getTunnelStats(tunnel.ARABICNAME)?.notesCount) }}</p>
+        </div>
+        <div>
+          <p class="text-[1vw] text-gray-600 mb-2 font-semibold">العرض</p>
+          <p class="text-[0.95vw] font-bold text-primary">م {{ tunnel["العرض_بالمتر"]}}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Map and Utility Card Section (takes remaining space) -->
+    <div class="flex-1 min-h-0 grid grid-cols-6 gap-3">
+      <!-- Utility Card (spans 2 columns) -->
+      <div class="col-span-2">
+        <div class="bg-white rounded-lg shadow-lg h-full flex flex-col overflow-hidden">
+          <!-- Table Headers -->
+          <div class="grid grid-cols-3 gap-2 px-5 py-4 border-b border-gray-200 flex-shrink-0">
+            <div class="text-right text-[1vw] font-semibold text-primary">الاسم</div>
+            <div class="text-center text-[1vw] font-semibold text-primary">إجمالي الأصول</div>
+            <div class="text-left text-[1vw] font-semibold text-primary">إجمالي الملاحظات</div>
+          </div>
+
+          <!-- Utility Rows - Edge to Edge -->
+          <div class="flex-grow overflow-auto">
+            <div
+              *ngFor="let utility of utilityCard; let i = index"
+              class="grid grid-cols-3 gap-2 items-center px-5 py-4 transition-all border-b border-gray-100 last:border-b-0"
+              [class.bg-primary]="isUtilitySelected(i)"
+              [class.bg-opacity-40]="isUtilitySelected(i)"
+              [class.text-white]="isUtilitySelected(i)">
+
+              <!-- Name with Icon -->
+              <div class="flex items-center gap-2 text-right">
+                <img
+                  [src]="getUtilityIcon(utility.name)"
+                  alt="{{ utility.name }}"
+                  class="w-[2vw] h-[2vw]"
+                  [class.filter]="isUtilitySelected(i)"
+                  [class.brightness-0]="isUtilitySelected(i)"
+                  [class.invert]="isUtilitySelected(i)">
+                <span class="text-[1vw] font-medium"
+                      [class.text-white]="isUtilitySelected(i)"
+                      [class.text-gray-800]="!isUtilitySelected(i)">
+                  {{ utility.name }}
+                </span>
+              </div>
+
+              <!-- Assets Count -->
+              <span class="text-[1.1vw] font-bold text-center"
+                    [class.text-white]="isUtilitySelected(i)"
+                    [class.text-primary]="!isUtilitySelected(i)">
+                {{ utility.assetsCount }}
+              </span>
+
+              <!-- Notes Count -->
+              <span class="text-[1.1vw] font-bold text-left"
+                    [class.text-white]="isUtilitySelected(i)"
+                    [class.text-primary]="!isUtilitySelected(i)">
+                {{ utility.notesCount }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Map Section (spans 4 columns) -->
+      <div class="col-span-4">
+        <app-map-view height="100%"></app-map-view>
+      </div>
+    </div>
+
+  </div>
+</div>

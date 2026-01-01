@@ -1,0 +1,6 @@
+<div class="text-center h-full flex flex-col justify-center border-2 border-gray-200 rounded-lg p-4">
+  <p class="text-[1.2vw] text-gray-700 font-bold mb-[8%]">{{ title }}</p>
+  <h3 class="text-[1.5vw] font-bold text-primary mb-[3%]">{{ value }}</h3>
+  <p *ngIf="subtitle" class="text-[0.7vw] text-gray-600 font-semibold">{{ subtitle }}</p>
+  <ng-content></ng-content>
+</div>

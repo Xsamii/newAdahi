@@ -1,0 +1,67 @@
+/* You can add global styles to this file, and also import other style files */
+
+/* PrimeNG Core CSS */
+@import "primeng/resources/primeng.min.css";
+
+/* PrimeNG Theme - Light (default) */
+@import "primeng/resources/themes/lara-light-blue/theme.css";
+
+/* PrimeIcons */
+@import "primeicons/primeicons.css";
+
+/* Tailwind CSS */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Dark Mode Styles */
+:root {
+  --primary-color: #3b82f6;
+  --primary-color-dark: #2563eb;
+  --surface-ground: #ffffff;
+  --surface-section: #f8f9fa;
+  --surface-card: #ffffff;
+  --text-color: #495057;
+  --text-color-secondary: #6c757d;
+}
+
+.dark {
+  --primary-color: #60a5fa;
+  --primary-color-dark: #3b82f6;
+  --surface-ground: #1e1e1e;
+  --surface-section: #2d2d2d;
+  --surface-card: #2d2d2d;
+  --text-color: #e5e7eb;
+  --text-color-secondary: #9ca3af;
+
+  background-color: var(--surface-ground);
+  color: var(--text-color);
+}
+
+/* RTL Support */
+[dir="rtl"] {
+  text-align: right;
+}
+
+[dir="ltr"] {
+  text-align: left;
+}
+
+/* RTL-specific adjustments for components */
+[dir="rtl"] .p-component {
+  text-align: right;
+}
+
+[dir="rtl"] .p-datatable {
+  direction: rtl;
+}
+
+/* Ensure body has smooth transitions */
+body {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ArcGIS Map RTL Support */
+[dir="rtl"] .esri-view {
+  direction: ltr;  /* Keep map controls in LTR */
+}

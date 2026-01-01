@@ -1,0 +1,41 @@
+/* Custom Scrollbar Styling */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #88774F #f1f1f1;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #88774F;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #88774F;
+}
+
+.custom-scrollbar::-webkit-scrollbar-button {
+  display: none;
+}
+
+/* شاشات 2560px */
+@media (min-width: 2560px) and (max-width: 3839px) {
+  .tunnels-container {
+    height: 330px !important;
+  }
+}
+
+/* شاشات 4K وما فوق */
+@media (min-width: 3840px) {
+  .tunnels-container {
+    height: 350px !important;
+  }
+}
