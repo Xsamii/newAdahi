@@ -39,6 +39,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   totalStats: TotalStats = { totalAssets: 0, totalNotes: 0 };
   inspectionTypeStats: { name: string; count: number }[] = [];
   dangerLevelStats: { name: string; count: number }[] = [];
+  floorDistribution: { name: string; count: number }[] = [];
+  categoryDistribution: { name: string; count: number }[] = [];
+  typeDistribution: { name: string; count: number }[] = [];
+  manufacturerDistribution: { name: string; count: number }[] = [];
 
   // Asset-specific properties
   assetStats: AssetStats = {
@@ -86,8 +90,16 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     try {
       this.inspectionTypeStats = await this.dashboardService.getInspectionTypeStats();
       this.dangerLevelStats = await this.dashboardService.getDangerLevelStats();
+      this.floorDistribution = await this.dashboardService.getAssetFloorDistribution();
+      this.categoryDistribution = await this.dashboardService.getAssetCategoryDistribution();
+      this.typeDistribution = await this.dashboardService.getAssetTypeDistribution();
+      this.manufacturerDistribution = await this.dashboardService.getAssetManufacturerDistribution();
       console.log('Inspection Type Stats:', this.inspectionTypeStats);
       console.log('Danger Level Stats:', this.dangerLevelStats);
+      console.log('Floor Distribution:', this.floorDistribution);
+      console.log('Category Distribution:', this.categoryDistribution);
+      console.log('Type Distribution:', this.typeDistribution);
+      console.log('Manufacturer Distribution:', this.manufacturerDistribution);
     } catch (error) {
       console.error('Error loading inspection stats:', error);
     }
@@ -95,9 +107,27 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   loadData(): void {
     // Subscribe to asset data
-    this.dashboardService.assetsData.subscribe((assets) => {
+    this.dashboardService.assetsData.subscribe(async (assets) => {
       console.log('Assets loaded:', assets.length);
       this.statistics.totalAssets = assets.length;
+      // Reload distributions when assets are updated
+      this.floorDistribution = await this.dashboardService.getAssetFloorDistribution();
+      this.categoryDistribution = await this.dashboardService.getAssetCategoryDistribution();
+      this.typeDistribution = await this.dashboardService.getAssetTypeDistribution();
+      this.manufacturerDistribution = await this.dashboardService.getAssetManufacturerDistribution();
+      // Recreate charts if already initialized
+      if (this.floorDistribution.length > 0) {
+        this.updateChart1();
+      }
+      if (this.categoryDistribution.length > 0) {
+        this.updateChart2();
+      }
+      if (this.typeDistribution.length > 0) {
+        this.updateChart3();
+      }
+      if (this.manufacturerDistribution.length > 0) {
+        this.updateChart4();
+      }
     });
 
     // Subscribe to asset statistics
@@ -152,66 +182,17 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       },
     };
 
-    // Chart 1: Tunnel Distribution by Owner
-    Highcharts.chart('chart1', {
-      ...chartOptions,
-      series: [{
-        type: 'pie',
-        name: 'الأنفاق',
-        data: this.categories.map(cat => ({
-          name: cat.title,
-          y: cat.count
-        }))
-      }]
-    });
+    // Chart 1: Asset Distribution by Floor
+    this.updateChart1();
 
-    // Chart 2: Assets Distribution
-    Highcharts.chart('chart2', {
-      ...chartOptions,
-      series: [{
-        type: 'pie',
-        name: 'الأصول',
-        data: this.categories.map(cat => ({
-          name: cat.title,
-          y: cat.tableRows.reduce((sum, row) => sum + (row.assetsCount || 0), 0)
-        }))
-      }]
-    });
+    // Chart 2: Assets Distribution by Equipment Category
+    this.updateChart2();
 
-    // Chart 3: Notes Distribution
-    Highcharts.chart('chart3', {
-      ...chartOptions,
-      series: [{
-        type: 'pie',
-        name: 'الملاحظات',
-        data: this.categories.map(cat => ({
-          name: cat.title,
-          y: cat.tableRows.reduce((sum, row) => sum + (row.notesCount || 0), 0)
-        }))
-      }]
-    });
+    // Chart 3: Asset Distribution by Type
+    this.updateChart3();
 
-    // Chart 4: Tunnel Length Distribution by Owner
-    Highcharts.chart('chart4', {
-      ...chartOptions,
-      series: [{
-        type: 'pie',
-        name: 'الطول (كم)',
-        data: this.categories.map(cat => {
-          // Calculate total length for this owner
-          const ownerTunnels = this.dashboardService.tunnlesData.value.filter(
-            t => t.Owner === cat.title
-          );
-          const totalLength = ownerTunnels.reduce((sum, tunnel) => {
-            return sum + (tunnel.الطول_كم || 0);
-          }, 0);
-          return {
-            name: cat.title,
-            y: Number(totalLength.toFixed(2))
-          };
-        })
-      }]
-    });
+    // Chart 4: Asset Distribution by Manufacturer
+    this.updateChart4();
 
     // Chart 5: Inspection Type Distribution
     Highcharts.chart('chart5', {
@@ -252,6 +233,189 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  updateChart1(): void {
+    const chartOptions: Highcharts.Options = {
+      chart: {
+        type: 'pie',
+        height: '220px',
+      },
+      title: {
+        text: undefined,
+      },
+      credits: {
+        enabled: false,
+      },
+      plotOptions: {
+        pie: {
+          innerSize: '60%',
+          dataLabels: {
+            enabled: true,
+            format: '<b>{point.name}</b>: {point.percentage:.1f}%',
+            style: {
+              fontSize: '17px'
+            }
+          },
+        },
+      },
+    };
+
+    // Chart 1: Asset Distribution by Floor
+    Highcharts.chart('chart1', {
+      ...chartOptions,
+      series: [{
+        type: 'pie',
+        name: 'الأصول',
+        data: this.floorDistribution.length > 0
+          ? this.floorDistribution.map(floor => ({
+              name: floor.name,
+              y: floor.count
+            }))
+          : [
+              { name: 'الطابق الأرضي', y: 0 },
+              { name: 'الطابق الأول', y: 0 },
+              { name: 'الطابق الثاني', y: 0 }
+            ]
+      }]
+    });
+  }
+
+  updateChart2(): void {
+    const chartOptions: Highcharts.Options = {
+      chart: {
+        type: 'pie',
+        height: '220px',
+      },
+      title: {
+        text: undefined,
+      },
+      credits: {
+        enabled: false,
+      },
+      plotOptions: {
+        pie: {
+          innerSize: '60%',
+          dataLabels: {
+            enabled: true,
+            format: '<b>{point.name}</b>: {point.percentage:.1f}%',
+            style: {
+              fontSize: '17px'
+            }
+          },
+        },
+      },
+    };
+
+    // Chart 2: Asset Distribution by Equipment Category
+    Highcharts.chart('chart2', {
+      ...chartOptions,
+      series: [{
+        type: 'pie',
+        name: 'الأصول',
+        data: this.categoryDistribution.length > 0
+          ? this.categoryDistribution.map(category => ({
+              name: category.name,
+              y: category.count
+            }))
+          : [
+              { name: 'كهربائي', y: 0 },
+              { name: 'محطة كهربائية', y: 0 },
+              { name: 'محطة كهربائية / تكييف', y: 0 },
+              { name: 'ميكانيكي', y: 0 },
+              { name: 'تبريد', y: 0 },
+              { name: 'لم يستدل عليها', y: 0 }
+            ]
+      }]
+    });
+  }
+
+  updateChart3(): void {
+    const chartOptions: Highcharts.Options = {
+      chart: {
+        type: 'pie',
+        height: '220px',
+      },
+      title: {
+        text: undefined,
+      },
+      credits: {
+        enabled: false,
+      },
+      plotOptions: {
+        pie: {
+          innerSize: '60%',
+          dataLabels: {
+            enabled: true,
+            format: '<b>{point.name}</b>: {point.percentage:.1f}%',
+            style: {
+              fontSize: '17px'
+            }
+          },
+        },
+      },
+    };
+
+    // Chart 3: Asset Distribution by Type
+    Highcharts.chart('chart3', {
+      ...chartOptions,
+      series: [{
+        type: 'pie',
+        name: 'الأصول',
+        data: this.typeDistribution.length > 0
+          ? this.typeDistribution.map(type => ({
+              name: type.name,
+              y: type.count
+            }))
+          : [
+              { name: 'غير محدد', y: 0 }
+            ]
+      }]
+    });
+  }
+
+  updateChart4(): void {
+    const chartOptions: Highcharts.Options = {
+      chart: {
+        type: 'pie',
+        height: '220px',
+      },
+      title: {
+        text: undefined,
+      },
+      credits: {
+        enabled: false,
+      },
+      plotOptions: {
+        pie: {
+          innerSize: '60%',
+          dataLabels: {
+            enabled: true,
+            format: '<b>{point.name}</b>: {point.percentage:.1f}%',
+            style: {
+              fontSize: '17px'
+            }
+          },
+        },
+      },
+    };
+
+    // Chart 4: Asset Distribution by Manufacturer
+    Highcharts.chart('chart4', {
+      ...chartOptions,
+      series: [{
+        type: 'pie',
+        name: 'الأصول',
+        data: this.manufacturerDistribution.length > 0
+          ? this.manufacturerDistribution.map(manufacturer => ({
+              name: manufacturer.name,
+              y: manufacturer.count
+            }))
+          : [
+              { name: 'غير محدد', y: 0 }
+            ]
+      }]
+    });
+  }
+
   navigateToCategory(categoryId: string): void {
     this.router.navigate(['/tunnels', categoryId]);
   }
@@ -271,10 +435,24 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
           ]
         },
         {
+          title: 'توزيع الأصول حسب الطابق',
+          data: this.floorDistribution.map(floor => ({
+            label: floor.name,
+            value: `${floor.count} أصل`
+          }))
+        },
+        {
           title: 'توزيع الأنفاق حسب المالك',
           data: this.categories.map(cat => ({
             label: cat.title,
             value: `${cat.count} نفق`
+          }))
+        },
+        {
+          title: 'توزيع الأصول حسب فئة المعدات',
+          data: this.categoryDistribution.map(category => ({
+            label: category.name,
+            value: `${category.count} أصل`
           }))
         },
         {
@@ -288,6 +466,13 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
           })
         },
         {
+          title: 'توزيع الأصول حسب النوع',
+          data: this.typeDistribution.map(type => ({
+            label: type.name,
+            value: `${type.count} أصل`
+          }))
+        },
+        {
           title: 'توزيع الملاحظات حسب الفئة',
           data: this.categories.map(cat => {
             const notesCount = cat.tableRows.reduce((sum, row) => sum + (row.notesCount || 0), 0);
@@ -296,6 +481,13 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
               value: `${notesCount} ملاحظة`
             };
           })
+        },
+        {
+          title: 'توزيع الأصول حسب الشركة المصنعة',
+          data: this.manufacturerDistribution.map(manufacturer => ({
+            label: manufacturer.name,
+            value: `${manufacturer.count} أصل`
+          }))
         },
         {
           title: 'توزيع أطوال الأنفاق حسب المالك',
@@ -328,10 +520,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       ],
       charts: [
-        { elementId: 'chart1', title: 'توزيع الأنفاق حسب المالك' },
-        { elementId: 'chart2', title: 'توزيع الأصول' },
-        { elementId: 'chart3', title: 'توزيع الملاحظات' },
-        { elementId: 'chart4', title: 'توزيع أطوال الأنفاق حسب الملاك' },
+        { elementId: 'chart1', title: 'توزيع الأصول حسب الطابق' },
+        { elementId: 'chart2', title: 'توزيع الأصول حسب فئة المعدات' },
+        { elementId: 'chart3', title: 'توزيع الأصول حسب النوع' },
+        { elementId: 'chart4', title: 'توزيع الأصول حسب الشركة المصنعة' },
         { elementId: 'chart5', title: 'توزيع أنواع الفحص' },
         { elementId: 'chart6', title: 'مستوى الخطورة' }
       ]

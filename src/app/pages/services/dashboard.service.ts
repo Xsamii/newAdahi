@@ -320,6 +320,355 @@ export class DashboardService {
     this.onwers.next(tunnelCategoryFormat);
   }
 
+  /**
+   * Get asset counts by Manufacturer field
+   * Returns distribution of assets by manufacturer
+   */
+  async getAssetManufacturerDistribution(): Promise<{ name: string; count: number }[]> {
+    const assets = this.assetsData.value;
+    if (assets.length === 0) {
+      // If assets not loaded yet, query from merge layer
+      const mergeLayer = this.featureLayers[0];
+      if (mergeLayer) {
+        const res = await this.mapService.getFieldValueCounts(
+          mergeLayer,
+          'Manufacturer',
+          '1=1'
+        );
+        
+        // Map Manufacturer values to Arabic names where appropriate
+        const manufacturerMap: { [key: string]: string } = {
+          'N/A': 'غير متاح',
+          'Local': 'محلي',
+          'Local industry': 'صناعة محلية',
+          'لم يستدل عليها': 'لم يستدل عليها'
+        };
+
+        // Normalize manufacturer values
+        const normalizeManufacturer = (manufacturer: string | null): string => {
+          if (!manufacturer || manufacturer.trim() === '' || manufacturer === 'null' || manufacturer === 'undefined') {
+            return 'غير محدد';
+          }
+          const normalized = manufacturer.trim();
+          return manufacturerMap[normalized] || normalized;
+        };
+
+        const manufacturerCounts: { [key: string]: number } = {};
+        
+        Object.entries(res).forEach(([key, count]) => {
+          if (key && key !== 'null' && key !== 'undefined' && key !== '') {
+            const normalizedKey = normalizeManufacturer(key);
+            manufacturerCounts[normalizedKey] = (manufacturerCounts[normalizedKey] || 0) + Number(count);
+          } else {
+            // Handle NULL values
+            manufacturerCounts['غير محدد'] = (manufacturerCounts['غير محدد'] || 0) + Number(count);
+          }
+        });
+
+        const manufacturerDistribution = Object.entries(manufacturerCounts)
+          .map(([name, count]) => ({
+            name,
+            count
+          }))
+          .filter(item => item.count > 0) // Only include manufacturers with assets
+          .sort((a, b) => b.count - a.count); // Sort by count descending
+
+        return manufacturerDistribution;
+      }
+      return [];
+    }
+
+    // Count assets by Manufacturer from loaded assets
+    const manufacturerCounts: { [key: string]: number } = {};
+    
+    // Map Manufacturer values to Arabic names where appropriate
+    const manufacturerMap: { [key: string]: string } = {
+      'N/A': 'غير متاح',
+      'Local': 'محلي',
+      'Local industry': 'صناعة محلية',
+      'لم يستدل عليها': 'لم يستدل عليها'
+    };
+
+    // Normalize manufacturer values
+    const normalizeManufacturer = (manufacturer: string | null): string => {
+      if (!manufacturer || manufacturer.trim() === '' || manufacturer === 'null' || manufacturer === 'undefined') {
+        return 'غير محدد';
+      }
+      const normalized = manufacturer.trim();
+      return manufacturerMap[normalized] || normalized;
+    };
+
+    assets.forEach((asset) => {
+      const normalizedManufacturer = normalizeManufacturer(asset.Manufacturer);
+      manufacturerCounts[normalizedManufacturer] = (manufacturerCounts[normalizedManufacturer] || 0) + 1;
+    });
+
+    const manufacturerDistribution = Object.entries(manufacturerCounts)
+      .map(([name, count]) => ({
+        name,
+        count
+      }))
+      .filter(item => item.count > 0) // Only include manufacturers with assets
+      .sort((a, b) => b.count - a.count); // Sort by count descending
+
+    return manufacturerDistribution;
+  }
+
+  /**
+   * Get asset counts by type field
+   * Returns distribution of assets by type
+   */
+  async getAssetTypeDistribution(): Promise<{ name: string; count: number }[]> {
+    const assets = this.assetsData.value;
+    if (assets.length === 0) {
+      // If assets not loaded yet, query from merge layer
+      const mergeLayer = this.featureLayers[0];
+      if (mergeLayer) {
+        const res = await this.mapService.getFieldValueCounts(
+          mergeLayer,
+          'type',
+          '1=1'
+        );
+        
+        // Normalize type values (handle duplicates and variations)
+        const normalizeType = (type: string | null): string => {
+          if (!type || type.trim() === '' || type === 'null' || type === 'undefined') {
+            return 'غير محدد';
+          }
+          // Normalize variations - trim and handle common variations
+          let normalized = type.trim();
+          
+          // Handle spelling variations (ي vs ى)
+          normalized = normalized.replace(/ى/g, 'ي');
+          
+          // Handle specific known variations
+          if (normalized === 'طفايه حريق' || normalized === 'طفاية حريق') {
+            return 'طفاية حريق';
+          }
+          if (normalized === 'لوحه تحكم' || normalized === 'لوحة تحكم') {
+            return 'لوحة تحكم';
+          }
+          
+          return normalized;
+        };
+
+        const typeCounts: { [key: string]: number } = {};
+        
+        Object.entries(res).forEach(([key, count]) => {
+          if (key && key !== 'null' && key !== 'undefined' && key !== '') {
+            const normalizedKey = normalizeType(key);
+            typeCounts[normalizedKey] = (typeCounts[normalizedKey] || 0) + Number(count);
+          } else {
+            // Handle NULL values
+            typeCounts['غير محدد'] = (typeCounts['غير محدد'] || 0) + Number(count);
+          }
+        });
+
+        const typeDistribution = Object.entries(typeCounts)
+          .map(([name, count]) => ({
+            name,
+            count
+          }))
+          .filter(item => item.count > 0) // Only include types with assets
+          .sort((a, b) => b.count - a.count); // Sort by count descending
+
+        return typeDistribution;
+      }
+      return [];
+    }
+
+    // Count assets by type from loaded assets
+    const typeCounts: { [key: string]: number } = {};
+    
+    // Normalize type values (handle duplicates and variations)
+    const normalizeType = (type: string | null): string => {
+      if (!type || type.trim() === '' || type === 'null' || type === 'undefined') {
+        return 'غير محدد';
+      }
+      // Normalize variations - trim and handle common variations
+      let normalized = type.trim();
+      
+      // Handle spelling variations (ي vs ى)
+      normalized = normalized.replace(/ى/g, 'ي');
+      
+      // Handle specific known variations
+      if (normalized === 'طفايه حريق' || normalized === 'طفاية حريق') {
+        return 'طفاية حريق';
+      }
+      if (normalized === 'لوحه تحكم' || normalized === 'لوحة تحكم') {
+        return 'لوحة تحكم';
+      }
+      
+      return normalized;
+    };
+
+    assets.forEach((asset) => {
+      const normalizedType = normalizeType(asset.type);
+      typeCounts[normalizedType] = (typeCounts[normalizedType] || 0) + 1;
+    });
+
+    const typeDistribution = Object.entries(typeCounts)
+      .map(([name, count]) => ({
+        name,
+        count
+      }))
+      .filter(item => item.count > 0) // Only include types with assets
+      .sort((a, b) => b.count - a.count); // Sort by count descending
+
+    return typeDistribution;
+  }
+
+  /**
+   * Get asset counts by Equipment_Category with Arabic translations
+   * Returns distribution of assets by equipment category
+   */
+  async getAssetCategoryDistribution(): Promise<{ name: string; count: number }[]> {
+    const assets = this.assetsData.value;
+    if (assets.length === 0) {
+      // If assets not loaded yet, query from merge layer
+      const mergeLayer = this.featureLayers[0];
+      if (mergeLayer) {
+        const res = await this.mapService.getFieldValueCounts(
+          mergeLayer,
+          'Equipment_Category',
+          '1=1'
+        );
+        
+        // Map Equipment_Category values to Arabic names
+        const categoryMap: { [key: string]: string } = {
+          'Electrical': 'كهربائي',
+          'Electrical Substation': 'محطة كهربائية',
+          'Electrical Substation / AC': 'محطة كهربائية / تكييف',
+          'Mechanical': 'ميكانيكي',
+          'Refrigeration': 'تبريد',
+          'لم يستدل عليها': 'لم يستدل عليها'
+        };
+
+        const categoryDistribution = Object.entries(res)
+          .filter(([key]) => key && key !== 'null' && key !== 'undefined' && key !== '')
+          .map(([key, count]) => ({
+            name: categoryMap[key] || key, // Use mapped name or original if not in map
+            count: Number(count) || 0
+          }))
+          .filter(item => item.count > 0) // Only include categories with assets
+          .sort((a, b) => b.count - a.count); // Sort by count descending
+
+        return categoryDistribution;
+      }
+      return [];
+    }
+
+    // Count assets by Equipment_Category from loaded assets
+    const categoryCounts: { [key: string]: number } = {};
+    const categoryMap: { [key: string]: string } = {
+      'Electrical': 'كهربائي',
+      'Electrical Substation': 'محطة كهربائية',
+      'Electrical Substation / AC': 'محطة كهربائية / تكييف',
+      'Mechanical': 'ميكانيكي',
+      'Refrigeration': 'تبريد',
+      'لم يستدل عليها': 'لم يستدل عليها'
+    };
+
+    assets.forEach((asset) => {
+      if (asset.Equipment_Category && asset.Equipment_Category.trim() !== '') {
+        const categoryName = categoryMap[asset.Equipment_Category] || asset.Equipment_Category;
+        categoryCounts[categoryName] = (categoryCounts[categoryName] || 0) + 1;
+      }
+    });
+
+    const categoryDistribution = Object.entries(categoryCounts)
+      .map(([name, count]) => ({
+        name,
+        count
+      }))
+      .filter(item => item.count > 0) // Only include categories with assets
+      .sort((a, b) => b.count - a.count); // Sort by count descending
+
+    return categoryDistribution;
+  }
+
+  /**
+   * Get asset counts by floor based on MERGE_SRC field
+   * Returns distribution of assets across floors
+   * MERGE_SRC values: 'DBO.AssetsPoint' (ground), 'DBO.AssetsPoint_1' (first), 'DBO.AssetsPoint_2' (second)
+   */
+  async getAssetFloorDistribution(): Promise<{ name: string; count: number }[]> {
+    const assets = this.assetsData.value;
+    if (assets.length === 0) {
+      // If assets not loaded yet, query from merge layer
+      const mergeLayer = this.featureLayers[0];
+      if (mergeLayer) {
+        const res = await this.mapService.getFieldValueCounts(
+          mergeLayer,
+          'MERGE_SRC',
+          '1=1'
+        );
+        
+        // Map MERGE_SRC values to floor names
+        const floorMap: { [key: string]: string } = {
+          'DBO.AssetsPoint': 'الطابق الأرضي',
+          'DBO.AssetsPoint_1': 'الطابق الأول',
+          'DBO.AssetsPoint_2': 'الطابق الثاني'
+        };
+
+        const floorDistribution = Object.entries(res)
+          .filter(([key]) => key && key !== 'null' && key !== 'undefined' && key !== '')
+          .map(([key, count]) => ({
+            name: floorMap[key] || key, // Use mapped name or original if not in map
+            count: Number(count) || 0
+          }))
+          .filter(item => item.count > 0) // Only include floors with assets
+          .sort((a, b) => {
+            // Sort by floor order: ground, first, second
+            const order = ['الطابق الأرضي', 'الطابق الأول', 'الطابق الثاني'];
+            const indexA = order.indexOf(a.name);
+            const indexB = order.indexOf(b.name);
+            if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+            if (indexA !== -1) return -1;
+            if (indexB !== -1) return 1;
+            return a.name.localeCompare(b.name);
+          });
+
+        return floorDistribution;
+      }
+      return [];
+    }
+
+    // Count assets by MERGE_SRC from loaded assets
+    const floorCounts: { [key: string]: number } = {};
+    const floorMap: { [key: string]: string } = {
+      'DBO.AssetsPoint': 'الطابق الأرضي',
+      'DBO.AssetsPoint_1': 'الطابق الأول',
+      'DBO.AssetsPoint_2': 'الطابق الثاني'
+    };
+
+    assets.forEach((asset) => {
+      if (asset.MERGE_SRC && asset.MERGE_SRC.trim() !== '') {
+        const floorName = floorMap[asset.MERGE_SRC] || asset.MERGE_SRC;
+        floorCounts[floorName] = (floorCounts[floorName] || 0) + 1;
+      }
+    });
+
+    const floorDistribution = Object.entries(floorCounts)
+      .map(([name, count]) => ({
+        name,
+        count
+      }))
+      .filter(item => item.count > 0) // Only include floors with assets
+      .sort((a, b) => {
+        // Sort by floor order: ground, first, second
+        const order = ['الطابق الأرضي', 'الطابق الأول', 'الطابق الثاني'];
+        const indexA = order.indexOf(a.name);
+        const indexB = order.indexOf(b.name);
+        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+        if (indexA !== -1) return -1;
+        if (indexB !== -1) return 1;
+        return a.name.localeCompare(b.name);
+      });
+
+    return floorDistribution;
+  }
+
   private applyTunnelColorRenderer(filteredTunnels?: TunnelInterface[], colorByOwner: boolean = false): void {
     const tunnelLayer = this.featureLayers[20];
     if (!tunnelLayer) return;

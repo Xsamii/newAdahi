@@ -52,24 +52,24 @@
     <!-- Donut Charts Section -->
     <div class="grid grid-cols-3 gap-3 mt-2 p-3">
 
-      <!-- Donut Chart 1: Tunnel Distribution by Owner -->
+      <!-- Donut Chart 1: Asset Distribution by Floor -->
       <app-card [clickable]="false" [hoverable]="false">
         <div class="flex flex-col">
           <h3 class="text-base font-bold text-gray-900 mb-2 text-center">
-            توزيع الأنفاق حسب المالك
+            توزيع الأصول حسب الطابق
             <span class="text-xs text-gray-500 font-normal block mt-1">
-              النسبة المئوية = عدد أنفاق المالك ÷ ∑ عدد الأنفاق
+              النسبة المئوية = عدد أصول الطابق ÷ ∑ عدد الأصول
             </span>
           </h3>
           <div id="chart1"></div>
         </div>
       </app-card>
 
-      <!-- Donut Chart 2: Assets Distribution -->
+      <!-- Donut Chart 2: Assets Distribution by Equipment Category -->
       <app-card [clickable]="false" [hoverable]="false">
         <div class="flex flex-col">
           <h3 class="text-base font-bold text-gray-900 mb-2 text-center">
-            توزيع الأصول
+            توزيع الأصول حسب فئة المعدات
             <span class="text-xs text-gray-500 font-normal block mt-1">
               النسبة المئوية = عدد أصول الفئة ÷ ∑ عدد الأصول
             </span>
@@ -78,33 +78,33 @@
         </div>
       </app-card>
 
-      <!-- Donut Chart 3: Notes Distribution -->
+      <!-- Donut Chart 3: Asset Distribution by Type -->
       <app-card [clickable]="false" [hoverable]="false">
         <div class="flex flex-col">
           <h3 class="text-base font-bold text-gray-900 mb-2 text-center">
-            توزيع الملاحظات
+            توزيع الأصول حسب النوع
             <span class="text-xs text-gray-500 font-normal block mt-1">
-              النسبة المئوية = عدد ملاحظات الفئة ÷ ∑ عدد الملاحظات
+              النسبة المئوية = عدد أصول النوع ÷ ∑ عدد الأصول
             </span>
           </h3>
           <div id="chart3"></div>
         </div>
       </app-card>
 
-      <!-- Donut Chart 4: Tunnel Length Distribution by Owner -->
+      <!-- Donut Chart 4: Asset Distribution by Manufacturer -->
       <app-card [clickable]="false" [hoverable]="false">
         <div class="flex flex-col">
           <h3 class="text-base font-bold text-gray-900 mb-2 text-center">
-            توزيع أطوال الأنفاق حسب الملاك
+            توزيع الأصول حسب الشركة المصنعة
             <span class="text-xs text-gray-500 font-normal block mt-1">
-              النسبة المئوية = طول أنفاق المالك ÷ ∑ أطوال الأنفاق (كم)
+              النسبة المئوية = عدد أصول الشركة المصنعة ÷ ∑ عدد الأصول
             </span>
           </h3>
           <div id="chart4"></div>
         </div>
       </app-card>
 
-      <!-- Donut Chart 5: Inspection Type Distribution -->
+      <!-- Donut Chart 5: Inspection Type Distribution
       <app-card [clickable]="false" [hoverable]="false">
         <div class="flex flex-col">
           <h3 class="text-base font-bold text-gray-900 mb-2 text-center">
@@ -128,7 +128,7 @@
           </h3>
           <div id="chart6"></div>
         </div>
-      </app-card>
+      </app-card> -->
 
     </div>
 
