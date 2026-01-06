@@ -22,7 +22,7 @@ export const featureLayersConfig: FeatureLayerConfig[] = [
     index: 1,
     url: `https://144.76.146.59:6443/arcgis/rest/services/MajzraNewSDE/MapServer/23`,
     title: 'المباني',
-    visible: true,
+    visible: false,
   },
   {
     index: 2,

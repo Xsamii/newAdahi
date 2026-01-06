@@ -43,6 +43,7 @@ export class SidebarComponent implements OnInit {
   isTunnelsExpanded = false;
   isHeatmapExpanded = false;
   isAssetsExpanded = false;
+  selectedFloorId: string | null = null;
   tunnelOwners: TunnelOwner[] = [];
   allTunnels: TunnelItem[] = [];
   tunnelStats: TunnelStats[] = [];
@@ -199,6 +200,24 @@ export class SidebarComponent implements OnInit {
     });
     // Toggle the clicked floor
     floor.isExpanded = !floor.isExpanded;
+  }
+
+  async selectFloor(floor: AssetFloor) {
+    // Filter assets on map by selected floor
+    try {
+      this.selectedFloorId = floor.id;
+      await this.dashboardService.filterAssetsByFloor(floor.id);
+      console.log('Selected floor:', floor.title, floor.id);
+    } catch (error) {
+      console.error('Error filtering assets by floor:', error);
+    }
+  }
+
+  async showAllAssets() {
+    // Show all assets (remove floor filter)
+    this.selectedFloorId = null;
+    await this.dashboardService.filterAssetsByFloor('all');
+    console.log('Showing all assets');
   }
 
   updateAssetFloorsFromCategories(categories: any[]) {

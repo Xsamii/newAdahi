@@ -46,13 +46,31 @@
             *ngIf="isAssetsExpanded"
             class="mt-3 space-y-2 bg-white bg-opacity-10 rounded-lg p-3">
 
+            <!-- Show All Assets Button -->
+            <li>
+              <button
+                (click)="showAllAssets()"
+                [class.bg-white]="selectedFloorId === null"
+                [class.bg-opacity-20]="selectedFloorId === null"
+                class="w-full flex items-center px-4 py-2 rounded-lg hover:bg-white hover:bg-opacity-15 transition-colors text-white"
+                [class.bg-opacity-10]="selectedFloorId !== null">
+                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+                </svg>
+                <span class="font-medium">عرض جميع الأصول</span>
+              </button>
+            </li>
+
             <!-- Floor Items -->
             <li *ngFor="let floor of assetFloors">
               <div>
                 <!-- Floor Header Button -->
                 <button
-                  (click)="toggleFloor(floor)"
-                  class="w-full flex items-center justify-between px-4 py-2 rounded-lg hover:bg-white hover:bg-opacity-15 transition-colors text-white">
+                  (click)="selectFloor(floor); toggleFloor(floor)"
+                  [class.bg-white]="selectedFloorId === floor.id"
+                  [class.bg-opacity-20]="selectedFloorId === floor.id"
+                  class="w-full flex items-center justify-between px-4 py-2 rounded-lg hover:bg-white hover:bg-opacity-15 transition-colors text-white"
+                  [class.bg-opacity-10]="selectedFloorId !== floor.id">
                   <span class="font-medium">{{ floor.title }}</span>
                   <svg
                     class="w-4 h-4 transform transition-transform"

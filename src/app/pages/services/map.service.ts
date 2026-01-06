@@ -64,8 +64,8 @@ export class MapService {
     this.mapView = new MapView({
       container,
       map: this.map,
-      center: [39.8262, 21.4225],
-      zoom: 13,
+      center: [39.9124421, 21.44223806],
+      zoom: 18,
       ui: {
         components: [],
       },

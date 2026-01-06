@@ -172,6 +172,49 @@ export class DashboardService {
   initMapView(containerId: string) {
     this.mapView = this.mapService.initMapView(containerId);
   }
+
+  /**
+   * Filter assets by floor (MERGE_SRC field)
+   * @param floorId - The floor identifier: 'ground-floor', 'first-floor', 'second-floor', 'external-assets', or 'all'
+   */
+  async filterAssetsByFloor(floorId: string): Promise<void> {
+    const mergeLayer = this.featureLayers[0]; // Index 0 is the merge layer
+    if (!mergeLayer) {
+      console.warn('Merge layer not available');
+      return;
+    }
+
+    // Map floor IDs to MERGE_SRC values
+    const floorMap: { [key: string]: string } = {
+      'ground-floor': 'DBO.AssetsPoint',
+      'first-floor': 'DBO.AssetsPoint_1',
+      'second-floor': 'DBO.AssetsPoint_2'
+    };
+
+    const mergeSrcValue = floorMap[floorId];
+
+    if (floorId === 'all') {
+      // Show all assets - remove filter
+      mergeLayer.definitionExpression = '1=1';
+      // Zoom to all assets
+      await this.mapService.zoomToLayerExtent(mergeLayer, 1.5);
+    } else if (floorId === 'external-assets') {
+      // Show assets that are NOT in the three main floors (external assets)
+      mergeLayer.definitionExpression = `MERGE_SRC IS NULL OR (MERGE_SRC <> 'DBO.AssetsPoint' AND MERGE_SRC <> 'DBO.AssetsPoint_1' AND MERGE_SRC <> 'DBO.AssetsPoint_2')`;
+      // Zoom to filtered assets
+      await this.mapService.zoomToLayerExtent(mergeLayer, 1.5);
+    } else if (mergeSrcValue) {
+      // Filter by specific floor MERGE_SRC
+      mergeLayer.definitionExpression = `MERGE_SRC = '${mergeSrcValue}'`;
+      // Zoom to filtered assets
+      await this.mapService.zoomToLayerExtent(mergeLayer, 1.5);
+    } else {
+      console.warn(`Unknown floor ID: ${floorId}`);
+      return;
+    }
+
+    console.log(`Filtered assets by floor: ${floorId}, MERGE_SRC: ${mergeSrcValue || 'external/all'}`);
+  }
   async getAllTunnelsData(id: number) {
     // console.log('featureLayer', this.featureLayers[id]);
     // this.mapService.getLayerFieldDomains(this.featureLayers[id])
