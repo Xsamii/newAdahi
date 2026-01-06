@@ -72,3 +72,30 @@ export interface TunnelStats {
   assetsCount: number;
   notesCount: number;
 }
+
+// Asset Models
+export interface AssetInterface {
+  OBJECTID: number;
+  type: string | null;
+  sub_type: string | null;
+  Note: string | null;
+  QR_Code: string | null;
+  Equipment_Category: string | null;
+  Manufacturer: string | null;
+  Equipment_Model: string | null;
+  MERGE_SRC: string | null;
+}
+
+export interface AssetCategory {
+  id: string;
+  title: string;
+  count: number;
+  assets?: AssetInterface[];
+}
+
+export interface AssetStats {
+  totalAssets: number;
+  categories: Map<string, number>;
+  types: Map<string, number>;
+  subTypes: Map<string, number>;
+}

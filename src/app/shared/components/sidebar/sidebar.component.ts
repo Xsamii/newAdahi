@@ -96,15 +96,19 @@ export class SidebarComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    // Subscribe to owners data from dashboard service
-    this.dashboardService.onwers.subscribe((owners) => {
-      this.tunnelOwners = owners.map(owner => ({
-        id: owner.id,
-        title: owner.title,
-        count: owner.count,
-        utilities: owner.tableRows || [],
+    // Subscribe to asset categories (Equipment_Category) from dashboard service
+    this.dashboardService.onwers.subscribe((categories) => {
+      console.log('Asset categories received in sidebar:', categories);
+      this.tunnelOwners = categories.map(category => ({
+        id: category.id,
+        title: category.title,
+        count: category.count,
+        utilities: category.tableRows || [],
         isExpanded: false
       }));
+
+      // Update the asset floors dynamically based on Equipment_Category
+      this.updateAssetFloorsFromCategories(categories);
     });
 
     // Subscribe to tunnel stats
@@ -195,6 +199,34 @@ export class SidebarComponent implements OnInit {
     });
     // Toggle the clicked floor
     floor.isExpanded = !floor.isExpanded;
+  }
+
+  updateAssetFloorsFromCategories(categories: any[]) {
+    // Keep the existing floor structure but populate with actual Equipment_Category values
+    // Map the 3 types we have (mechanical, electrical, fire-fighting) to actual categories
+    const categoryMap: { [key: string]: string } = {};
+
+    categories.forEach(cat => {
+      const title = cat.title.toLowerCase();
+      if (title.includes('ميكانيك') || title.includes('mechanic')) {
+        categoryMap['mechanical'] = cat.title;
+      } else if (title.includes('كهرب') || title.includes('electric')) {
+        categoryMap['electrical'] = cat.title;
+      } else if (title.includes('حريق') || title.includes('fire')) {
+        categoryMap['fire-fighting'] = cat.title;
+      }
+    });
+
+    // Update the asset floors with actual category names
+    this.assetFloors.forEach(floor => {
+      floor.items = floor.items.map(item => ({
+        ...item,
+        // Keep the route but update with actual category if available
+        title: categoryMap[item.id.split('-')[1]] || item.title
+      }));
+    });
+
+    console.log('Updated asset floors:', this.assetFloors);
   }
 
   navigateToMain() {

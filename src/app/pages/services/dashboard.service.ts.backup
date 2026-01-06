@@ -9,9 +9,6 @@ import {
   CategoryTableRow,
   TunnelStats,
   TotalStats,
-  AssetInterface,
-  AssetCategory,
-  AssetStats,
 } from '../../core/models/tunnel.model';
 import { BehaviorSubject, map, Observable, Subject, combineLatest } from 'rxjs';
 // import Statistics from './statistics.interface';
@@ -124,20 +121,6 @@ export class DashboardService {
       totalNotes: 0,
     });
 
-  // Asset-specific BehaviorSubjects
-  public assetsData: BehaviorSubject<AssetInterface[]> = new BehaviorSubject<
-    AssetInterface[]
-  >([]);
-  public assetCategories: BehaviorSubject<AssetCategory[]> = new BehaviorSubject<
-    AssetCategory[]
-  >([]);
-  public assetStats: BehaviorSubject<AssetStats> = new BehaviorSubject<AssetStats>({
-    totalAssets: 0,
-    categories: new Map(),
-    types: new Map(),
-    subTypes: new Map(),
-  });
-
   constructor(private mapService: MapService) {}
 
   async initMap(): Promise<void> {
@@ -153,18 +136,24 @@ export class DashboardService {
       )
     );
 
+    // Update heatmap renderer with improved settings after layers are created
     // Wait for layers to be ready
     await new Promise((resolve) => setTimeout(resolve, 1000));
+    const heatmapConfig = featureLayersConfig.find((f) => f.index === 22);
+    if (heatmapConfig && heatmapConfig.renderer) {
+      this.mapService.updateHeatmapRenderer(heatmapConfig.renderer);
+    }
 
-    // Chain all API calls for asset system
+    // Chain all API calls
     try {
-      await this.getAllAssetsData(0); // Index 0 is the merge layer
-      await this.getEquipmentCategoryStats();
+      await this.getAllTunnelsData(20);
+      await this.getAssetsOnwerStats();
+      await this.getFahsOnwerStats();
       // Add a small delay to ensure all observables have emitted
       await new Promise((resolve) => setTimeout(resolve, 500));
-      console.log('All asset data loaded successfully');
+      console.log('All data loaded successfully');
     } catch (error) {
-      console.error('Error loading asset data:', error);
+      console.error('Error loading data:', error);
       throw error; // Re-throw to let app.component handle it
     }
   }
@@ -223,101 +212,6 @@ export class DashboardService {
       // Apply color renderer to tunnel layer
       this.applyTunnelColorRenderer();
     }
-  }
-
-  // New asset methods
-  async getAllAssetsData(layerIndex: number) {
-    console.log('Loading assets from merge layer...');
-    const res = await this.mapService.filterFeatureLayers(
-      this.featureLayers[layerIndex],
-      '1',
-      '1',
-      true
-    );
-
-    if (res?.length > 0) {
-      console.log('Assets loaded:', res.length);
-      const assets: AssetInterface[] = res.map((r: any) => ({
-        OBJECTID: r.OBJECTID,
-        type: r.type || null,
-        sub_type: r.sub_type || null,
-        Note: r.Note || null,
-        QR_Code: r.QR_Code || null,
-        Equipment_Category: r.Equipment_Category || null,
-        Manufacturer: r.Manufacturer || null,
-        Equipment_Model: r.Equipment_Model || null,
-        MERGE_SRC: r.MERGE_SRC || null,
-      }));
-
-      this.assetsData.next(assets);
-
-      // Calculate statistics
-      const stats: AssetStats = {
-        totalAssets: assets.length,
-        categories: new Map(),
-        types: new Map(),
-        subTypes: new Map(),
-      };
-
-      // Count by Equipment_Category
-      assets.forEach((asset) => {
-        if (asset.Equipment_Category) {
-          const count = stats.categories.get(asset.Equipment_Category) || 0;
-          stats.categories.set(asset.Equipment_Category, count + 1);
-        }
-        if (asset.type) {
-          const count = stats.types.get(asset.type) || 0;
-          stats.types.set(asset.type, count + 1);
-        }
-        if (asset.sub_type) {
-          const count = stats.subTypes.get(asset.sub_type) || 0;
-          stats.subTypes.set(asset.sub_type, count + 1);
-        }
-      });
-
-      this.assetStats.next(stats);
-      console.log('Asset statistics:', stats);
-    }
-  }
-
-  async getEquipmentCategoryStats() {
-    const assets = this.assetsData.value;
-    if (assets.length === 0) return;
-
-    // Get unique Equipment_Category values
-    const uniqueCategories = [
-      ...new Set(
-        assets
-          .map((asset) => asset.Equipment_Category)
-          .filter((cat) => cat != null && cat !== '')
-      ),
-    ] as string[];
-
-    console.log('Unique Equipment Categories:', uniqueCategories);
-
-    // Create category data
-    const categoryData: AssetCategory[] = uniqueCategories.map((category, index) => {
-      const categoryAssets = assets.filter(
-        (asset) => asset.Equipment_Category === category
-      );
-      return {
-        id: `cat-${index}`,
-        title: category,
-        count: categoryAssets.length,
-        assets: categoryAssets,
-      };
-    }).sort((a, b) => b.count - a.count); // Sort by count descending
-
-    this.assetCategories.next(categoryData);
-    console.log('Asset categories:', categoryData);
-
-    // Also update the tunnel categories for backward compatibility with sidebar
-    const tunnelCategoryFormat: TunnelCategory[] = categoryData.map(cat => ({
-      id: cat.id,
-      title: cat.title,
-      count: cat.count,
-    }));
-    this.onwers.next(tunnelCategoryFormat);
   }
 
   private applyTunnelColorRenderer(filteredTunnels?: TunnelInterface[], colorByOwner: boolean = false): void {
@@ -1717,4 +1611,647 @@ export class DashboardService {
       count,
     }));
   }
+
+  //   filterGeoLocation(locations: { name: string; checked: boolean }[]) {
+  //     this.clearUIFiltersMethods();
+  //     // console.log('vvvv', locations);
+  //     const values: string[] = locations
+  //       .filter((loc) => loc.checked)
+  //       .map((loc) => loc.name);
+  //     if (values.length === 0) {
+  //       // this.mapService.removeAllFilters(this.featureLayers[3]);
+  //       this.mapService.removeAllFilters(this.featureLayers[2], true);
+  //     } else {
+  //       this.mapService.filterFeatureLayersWithManyValues(
+  //         this.featureLayers[3],
+  //         'الموقع_بالنسبة_للطرق_الدائري',
+  //         values
+  //       );
+  //       this.mapService.filterFeatureLayersWithManyValues(
+  //         this.featureLayers[2],
+  //         'الموقع_بالنسبة_للطرق_الدائري',
+  //         values,
+  //         true
+  //       );
+  //     }
+  //   }
+  //   filterMainValues(
+  //     locations: { name: string; checked: boolean }[],
+  //     ceriteria: { name: string; selected: boolean }[],
+  //     suugestedMEth?: { label: string; selected: boolean }[]
+  //   ) {
+  //     // this.filterName.next('');
+  //     console.log('empt', suugestedMEth, locations, ceriteria);
+  //     if (suugestedMEth && suugestedMEth.filter((s) => s.selected).length > 0) {
+  //       // console.log('11111');
+  //       console.log(suugestedMEth);
+  //       const filterLocaion: { fieldName: string; values: (string | number)[] } =
+  //         {
+  //           fieldName: 'الموقع_بالنسبة_للطرق_الدائري',
+  //           values: locations.filter((loc) => loc.checked).map((loc) => loc.name),
+  //         };
+  //       const filterCriteria: { fieldName: string; values: (string | number)[] } =
+  //         {
+  //           fieldName: 'التصنيف_الرئيسي_1',
+  //           values: ceriteria
+  //             .filter((cer) => cer.selected)
+  //             .map((cer) => cer.name),
+  //         };
+  //       const filterSuggested: {
+  //         fieldName: string;
+  //         values: (string | number)[];
+  //       } = {
+  //         fieldName: 'التصنيف_الفرعي',
+  //         values: suugestedMEth.filter((m) => m.selected).map((m) => m.label),
+  //       };
+  //       console.log('filterrr suggested', filterSuggested);
+  //       this.mapService.filterFeatureLayersWithManyFieldsAndValues(
+  //         this.featureLayers[2],
+  //         [filterLocaion, filterSuggested],
+  //         true
+  //       );
+  //       //filtering services on geolocation
+  //       this.mapService.filterFeatureLayersWithManyFieldsAndValues(
+  //         this.featureLayers[8],
+  //         [filterLocaion]
+  //       );
+  //     } else {
+  //       console.log('22222');
+  //       const filterLocaion: { fieldName: string; values: (string | number)[] } =
+  //         {
+  //           fieldName: 'الموقع_بالنسبة_للطرق_الدائري',
+  //           values: locations.filter((loc) => loc.checked).map((loc) => loc.name),
+  //         };
+  //       const filterCriteria: { fieldName: string; values: (string | number)[] } =
+  //         {
+  //           fieldName: 'التصنيف_الرئيسي_1',
+  //           values: ceriteria
+  //             .filter((cer) => cer.selected)
+  //             .map((cer) => cer.name),
+  //         };
+  //       this.mapService.filterFeatureLayersWithManyFieldsAndValues(
+  //         this.featureLayers[2],
+  //         [filterLocaion, filterCriteria],
+  //         true
+  //       );
+  //       //filtering services on geolocation
+  //       this.mapService.filterFeatureLayersWithManyFieldsAndValues(
+  //         this.featureLayers[8],
+  //         [filterLocaion]
+  //       );
+  //     }
+  //   }
+
+  //   filterServices(
+  //     locations: { name: string; checked: boolean }[],
+  //     services: { name: string; checked: boolean }[]
+  //   ) {
+  //     const filterLocaion: { fieldName: string; values: (string | number)[] } = {
+  //       fieldName: 'الموقع_بالنسبة_للطرق_الدائري',
+  //       values: locations.filter((loc) => loc.checked).map((loc) => loc.name),
+  //     };
+  //     const filterSerices: { fieldName: string; values: (string | number)[] } = {
+  //       fieldName: 'تصنيف',
+  //       values: services.filter((ser) => ser.checked).map((ser) => ser.name),
+  //     };
+  //     this.mapService.filterFeatureLayersWithManyFieldsAndValues(
+  //       this.featureLayers[8],
+  //       [filterLocaion, filterSerices]
+  //     );
+  //   }
+  //   // filterParcels(
+  //   //   locations: { name: string; checked: boolean }[],
+  //   //   services: { name: string; checked: boolean }[]
+  //   // ) {
+  //   //   const filterLocaion: { fieldName: string; values: (string | number)[] } = {
+  //   //     fieldName: 'الموقع_بالنسبة_للطرق_الدائري',
+  //   //     values: locations.filter((loc) => loc.checked).map((loc) => loc.name),
+  //   //   };
+  //   //   const filterSerices: { fieldName: string; values: (string | number)[] } = {
+  //   //     fieldName: 'حالات_البناء',
+  //   //     values: services.filter((ser) => ser.checked).map((ser) => ser.name),
+  //   //   };
+  //   //   this.mapService.filterFeatureLayersWithManyFieldsAndValues(
+  //   //     this.featureLayers[7],
+  //   //     [filterLocaion, filterSerices]
+  //   //   );
+  //   // }
+
+  //   filterParcels(
+  //     locations: { name: string; checked: boolean }[],
+  //     services: { name: string; checked: boolean }[],
+  //     buildingTypes: { name: string; checked: boolean }[],
+  //     constructionMaterials: { name: string; checked: boolean }[],
+  //     permits: { name: string; checked: boolean }[],
+  //     nameFilter: string
+  //   ) {
+  //     console.log('xxxxx', nameFilter);
+
+  //     const filterLocation: { fieldName: string; values: (string | number)[] } = {
+  //       fieldName: 'location',
+  //       values: locations.filter((loc) => loc.checked).map((loc) => loc.name),
+  //     };
+
+  //     const filterServices: { fieldName: string; values: (string | number)[] } = {
+  //       fieldName: 'state',
+  //       values: services.filter((ser) => ser.checked).map((ser) => ser.name),
+  //     };
+
+  //     const filterBuildingTypes: {
+  //       fieldName: string;
+  //       values: (string | number)[];
+  //     } = {
+  //       fieldName: 'usage',
+  //       values: buildingTypes
+  //         .filter((type) => type.checked)
+  //         .map((type) => type.name),
+  //     };
+
+  //     const filterConstructionMaterials: {
+  //       fieldName: string;
+  //       values: (string | number)[];
+  //     } = {
+  //       fieldName: 'buildingType',
+  //       values: constructionMaterials
+  //         .filter((mat) => mat.checked)
+  //         .map((mat) => mat.name),
+  //     };
+  //     let checked = false;
+  //     if (permits.some((p) => p.name === 'التعديات' && p.checked)) {
+  //       checked = true;
+  //     }
+  //     if (permits.some((p) => p.name === 'الكل' && p.checked)) {
+  //       checked = false;
+  //     }
+  //     let filerName = { fieldName: 'الاسم', values: [] };
+  //     if (nameFilter && nameFilter !== '') {
+  //       console.log('sssss', nameFilter);
+
+  //       filerName = { fieldName: 'الاسم', values: [nameFilter] };
+  //     }
+  //     console.log('fff', filerName, filterLocation);
+
+  //     this.mapService.filterParcelssWithManyFieldsAndValues(
+  //       this.featureLayers[7],
+  //       [
+  //         filterLocation,
+  //         filterServices,
+  //         filterBuildingTypes,
+  //         filterConstructionMaterials,
+  //         filerName,
+  //       ],
+  //       checked
+  //     );
+  //   }
+  //   countParcels(
+  //     locations: { name: string; checked: boolean }[],
+  //     services: { name: string; checked: boolean }[],
+  //     buildingTypes: { name: string; checked: boolean }[],
+  //     constructionMaterials: { name: string; checked: boolean }[],
+  //     nameFilter: string
+  //   ) {
+  //     const filterLocation: { fieldName: string; values: (string | number)[] } = {
+  //       fieldName: 'location',
+  //       values: locations.filter((loc) => loc.checked).map((loc) => loc.name),
+  //     };
+
+  //     const filterServices: { fieldName: string; values: (string | number)[] } = {
+  //       fieldName: 'state',
+  //       values: services.filter((ser) => ser.checked).map((ser) => ser.name),
+  //     };
+
+  //     const filterBuildingTypes: {
+  //       fieldName: string;
+  //       values: (string | number)[];
+  //     } = {
+  //       fieldName: 'usage',
+  //       values: buildingTypes
+  //         .filter((type) => type.checked)
+  //         .map((type) => type.name),
+  //     };
+
+  //     const filterConstructionMaterials: {
+  //       fieldName: string;
+  //       values: (string | number)[];
+  //     } = {
+  //       fieldName: 'buildingType',
+  //       values: constructionMaterials
+  //         .filter((mat) => mat.checked)
+  //         .map((mat) => mat.name),
+  //     };
+  //     let filerName = { fieldName: 'الاسم', values: [] };
+  //     if (nameFilter && nameFilter !== '') {
+  //       console.log('filter name', nameFilter);
+
+  //       filerName = { fieldName: 'الاسم', values: [nameFilter] };
+  //     }
+  //     this.mapService
+  //       .getFeatureLayerParcelCountWithManyFieldsAndValues(
+  //         this.featureLayers[7],
+  //         [
+  //           filterLocation,
+  //           filterServices,
+  //           filterBuildingTypes,
+  //           filterConstructionMaterials,
+  //           filerName,
+  //         ]
+  //       )
+  //       .then((r) => {
+  //         this.parcelsCount.next(r);
+  //       });
+  //   }
+
+  //   getNamesOfLayer() {
+  //     console.log('this feature ', this.featureLayers[3]);
+  //   }
+
+  //   getFeaturesFieldValues(lyrIdx, fieldName: string): Observable<string[]> {
+  //     return this.mapService.getAllFieldValues(
+  //       this.featureLayers[lyrIdx],
+  //       fieldName
+  //     );
+  //   }
+  //   filterOnNameValue(name: string) {
+  //     this.clearUIFiltersLocations();
+  //     this.clearUIFiltersMethods();
+  //     this.mapService.filterFeatureLayersWithPopup(
+  //       this.featureLayers[2],
+  //       'الاسم_حسب_الاستشاري',
+  //       name,
+  //       true
+  //     );
+  //     // this.mapService.filterFeatureLayers(
+  //     //   this.featureLayers[3],
+  //     //   'الاسم_حسب_الاستشاري',
+  //     //   name
+  //     // );
+  //   }
+  //   filterOnLicenceOwnershipValue(
+  //     layerIdx: number,
+  //     field: string,
+  //     value: string
+  //   ) {
+  //     console.log('here in filter licence', value, this.featureLayers[layerIdx]);
+
+  //     // this.clearUIFiltersLocations();
+  //     // this.clearUIFiltersMethods();
+  //     this.mapService.filterFeatureLayersWithPopup(
+  //       this.featureLayers[layerIdx],
+  //       field,
+  //       value
+  //     );
+  //   }
+  //   getStatistics(): Observable<Statistics> {
+  //     return this.mapService.getFeatures().pipe(
+  //       map((features) => {
+  //         // console.log('ffffffffff', features);
+  //         // Transform the array of Esri Graphics to a Statistics object
+  //         let buildingsNum = features.reduce((sum, feature) => {
+  //           return sum + feature.attributes['join_count_1'];
+  //         }, 0);
+  //         let amanasArea = features.reduce((sum, feature) => {
+  //           return (
+  //             sum + Number(feature.attributes['مساحة_المنطقة_العشوائية_طبقا_لأ'])
+  //           );
+  //         }, 0);
+  //         // console.log('amanas area', amanasArea);
+  //         let areaDiff = features.reduce((sum, feature) => {
+  //           return (
+  //             sum + Number(feature.attributes['فرق_المساحة_بين_الاستشاري_والأم'])
+  //           );
+  //         }, 0);
+  //         // console.log('new area', consArea);
+  //         let consArea = features.reduce((sum, feature) => {
+  //           // Calculate area if the feature has a polygon geometry
+  //           if (feature.geometry.type === 'polygon') {
+  //             const polygon = feature.geometry as Polygon;
+  //             const area = planarArea(
+  //               polygon,
+  //               'square-kilometers' // You can use other units like 'hectares', 'square-kilometers', etc.
+  //             );
+  //             return sum + area;
+  //           }
+  //           return sum;
+  //         }, 0);
+
+  //         let sakani = features.reduce((sum, feature) => {
+  //           return sum + Number(feature.attributes['sakani2']);
+  //         }, 0);
+  //         let empty = features.reduce((sum, feature) => {
+  //           return sum + Number(feature.attributes['emptyland2']);
+  //         }, 0);
+  //         let wall = features.reduce((sum, feature) => {
+  //           return sum + Number(feature.attributes['wall2']);
+  //         }, 0);
+  //         let sakani_com = features.reduce((sum, feature) => {
+  //           return sum + Number(feature.attributes['sakani_com2']);
+  //         }, 0);
+  //         let enter = features.reduce((sum, feature) => {
+  //           return sum + Number(feature.attributes['entertain2']);
+  //         }, 0);
+  //         let good = features.reduce((sum, feature) => {
+  //           return sum + Number(feature.attributes['good2']);
+  //         }, 0);
+  //         let medium = features.reduce((sum, feature) => {
+  //           return sum + Number(feature.attributes['mediuam2']);
+  //         }, 0);
+  //         let bad = features.reduce((sum, feature) => {
+  //           return sum + Number(feature.attributes['bad2']);
+  //         }, 0);
+  //         let adj = features.reduce((sum, feature) => {
+  //           return sum + Number(feature.attributes['adj2']);
+  //         }, 0);
+  //         let struc = features.reduce((sum, feature) => {
+  //           return sum + Number(feature.attributes['struc2']);
+  //         }, 0);
+  //         let lbw = features.reduce((sum, feature) => {
+  //           return sum + Number(feature.attributes['lbw2']);
+  //         }, 0);
+  //         let loc = features.reduce((sum, feature) => {
+  //           return sum + Number(feature.attributes['loc2']);
+  //         }, 0);
+  //         let wood = features.reduce((sum, feature) => {
+  //           return sum + Number(feature.attributes['wood2']);
+  //         }, 0);
+  //         let enterServ = features.reduce((sum, feature) => {
+  //           return sum + Number(feature.attributes['ترفيهي']);
+  //         }, 0);
+  //         let medServ = features.reduce((sum, feature) => {
+  //           return sum + Number(feature.attributes['صحي']);
+  //         }, 0);
+  //         let educServ = features.reduce((sum, feature) => {
+  //           return sum + Number(feature.attributes['تعليمى']);
+  //         }, 0);
+  //         let relServ = features.reduce((sum, feature) => {
+  //           return sum + Number(feature.attributes['ديني']);
+  //         }, 0);
+  //         let investServ = features.reduce((sum, feature) => {
+  //           return sum + Number(feature.attributes['استثماري']);
+  //         }, 0);
+  //         let supplyServ = features.reduce((sum, feature) => {
+  //           return sum + Number(feature.attributes['تموينات']);
+  //         }, 0);
+  //         let govServ = features.reduce((sum, feature) => {
+  //           return sum + Number(feature.attributes['حكومي']);
+  //         }, 0);
+  //         let miscServ = features.reduce((sum, feature) => {
+  //           return sum + Number(feature.attributes['متنوعة']);
+  //         }, 0);
+  //         // let amanasArea = features.reduce((sum, feature) => {
+  //         //   return sum + feature.attributes['amanaFieldName']; // Replace 'amanaFieldName' with the actual field name for amanas area
+  //         // }, 0);
+  //         // let consultantArea = features.reduce((sum, feature) => {
+  //         //   return sum + feature.attributes['consultantFieldName']; // Replace 'consultantFieldName' with the actual field name for consultant area
+  //         // }, 0);
+  //         return {
+  //           areaNum: features.length,
+  //           buildingsNum: buildingsNum,
+  //           totalArea: amanasArea / 1000000,
+  //           amanasArea: amanasArea / 1000000,
+  //           areaDiff: areaDiff / 1000000,
+  //           consultantArea: consArea,
+  //           areaPrecent: Math.round((amanasArea / 2773596482.400712) * 100),
+  //           lu_sakani: sakani,
+  //           lu_sakani_com: sakani_com,
+  //           lu_enter: enter,
+  //           lu_wall: wall,
+  //           empty: empty,
+  //           st_good: good,
+  //           st_medium: medium,
+  //           st_bad: bad,
+  //           st_adj: adj,
+  //           mt_lbw: lbw,
+  //           mt_struc: struc,
+  //           mt_loc: loc,
+  //           mt_wood: wood,
+  //           educServ: educServ,
+  //           medServ: medServ,
+  //           relServ: relServ,
+  //           enterServ: enterServ,
+  //           investServ: investServ,
+  //           miscServ: miscServ,
+  //           govServ: govServ,
+  //           supplyServ: supplyServ,
+  //         } as Statistics;
+  //       })
+  //     );
+  //   }
+  //   toggleLayerList() {
+  //     this.displayLayerList.next(!this.displayLayerList.value);
+  //   }
+  //   toggleBaseMap() {
+  //     this.displayBaseMap.next(!this.displayBaseMap.value);
+  //   }
+  //   toggleInfo() {
+  //     this.displayInfo.next(!this.displayInfo.value);
+  //   }
+  //   closeCards() {
+  //     this.displayLayerList.next(false);
+  //     this.displayBaseMap.next(false);
+  //     this.displayInfo.next(false);
+  //   }
+  //   clearUIFiltersLocations() {
+  //     this.geoLocations.next([
+  //       { name: 'داخل الدائري الثاني', checked: false },
+  //       { name: 'داخل الدائري الثالث', checked: false },
+  //       { name: 'داخل الدائري الرابع', checked: false },
+  //       { name: 'داخل الدائري الخامس', checked: false },
+  //       { name: 'خارج الدائري الخامس', checked: false },
+  //     ]);
+  //   }
+  //   clearUIFiltersMethods() {
+  //     this.ceriteria.next([
+  //       { name: 'ارتقاء', selected: false },
+  //       { name: 'تحسين', selected: false },
+  //       { name: 'تخضع لسياسة', selected: false },
+  //       { name: 'تطوير', selected: false },
+  //     ]);
+  //   }
+  //   //filter on criteria handler
+  //   filterOnCriteria(methods: { name: string; selected: boolean }[]) {
+  //     this.clearUIFiltersLocations();
+  //     const values: string[] = methods
+  //       .filter((loc) => loc.selected)
+  //       .map((loc) => loc.name);
+  //     if (values.length === 0) {
+  //       this.mapService.removeAllFilters(this.featureLayers[3]);
+  //       this.mapService.removeAllFilters(this.featureLayers[2]);
+  //     } else {
+  //       this.mapService.filterFeatureLayersWithManyValues(
+  //         this.featureLayers[2],
+  //         'التصنيف_الرئيسي',
+  //         values,
+  //         true
+  //       );
+  //     }
+  //   }
+
+  //   handleStandardsSearch(layerName: string, layers) {
+  //     // console.log('kkkkk');
+  //     this.mapService.updateFeatureLayers(layers, layerName);
+  //   }
+  //   reset() {
+  //     this.geoLocations.next([
+  //       { name: 'داخل الدائري الثاني', checked: false },
+  //       { name: 'داخل الدائري الثالث', checked: false },
+  //       { name: 'داخل الدائري الرابع', checked: false },
+  //       { name: 'داخل الدائري الخامس', checked: false },
+  //       { name: 'خارج الدائري الخامس', checked: false },
+  //     ]);
+  //     this.services.next([
+  //       { name: 'صحي', checked: false },
+  //       { name: 'ديني', checked: false },
+  //       { name: 'تعليمي', checked: false },
+  //       { name: 'ترفيهي', checked: false },
+  //       { name: 'استثماري', checked: false },
+  //       { name: 'تموينات', checked: false },
+  //       { name: 'حكومي', checked: false },
+  //       { name: 'خارج النطاق', checked: false },
+  //       { name: 'زنك', checked: false },
+  //       { name: 'متنوعة', checked: false },
+  //     ]);
+  //     this.buildingStatus.next([
+  //       { name: 'هيكلي', checked: false },
+  //       { name: 'حوائط حاملة', checked: false },
+  //       { name: 'أرض فضاء', checked: false },
+  //       { name: 'شعبي', checked: false },
+  //     ]);
+  //     this.buildingTypes.next([
+  //       { name: 'سكنى', checked: false },
+  //       { name: 'ارض فضاء', checked: false },
+  //       { name: 'سكنى تجارى', checked: false },
+  //       { name: 'أرض مسورة', checked: false },
+  //       { name: 'ترفيه', checked: false },
+  //     ]);
+  //     this.ceriteria.next([
+  //       { name: 'ارتقاء', selected: false },
+  //       { name: 'تحسين', selected: false },
+  //       // { name: 'تخضع لسياسة', selected: false },
+  //       { name: 'تطوير', selected: false },
+  //       { name: 'مواقع متعارضة مع أراضي حكومية', selected: false },
+  //     ]);
+  //     this.constructionMaterials.next([
+  //       { name: 'هيكلي', checked: false },
+  //       { name: 'حوائط حاملة', checked: false },
+  //       { name: 'أرض فضاء', checked: false },
+  //       { name: 'شعبي', checked: false },
+  //     ]);
+  //     this.mapService.goHome();
+  //   }
+  //   // reset() {
+  //   //   window.location.reload();
+  //   // }
+
+  //   async getParcelStats(): Promise<ParcelStats> {
+  //     const featureLayer = this.featureLayers[7];
+  //     console.log(
+  //       '🏁 Running stats query on layer:',
+  //       featureLayer?.url || 'undefined'
+  //     );
+
+  //     if (!featureLayer) {
+  //       console.warn('⚠️ No feature layer found at index 7.');
+  //       return Promise.resolve({ nullAndAbove20Count: 0, totalCount: 0 });
+  //     }
+
+  //     // Helper function for count queries
+  //     const runQuery = async (where: string, label: string): Promise<number> => {
+  //       const query = featureLayer.createQuery();
+  //       query.where = where;
+  //       query.returnGeometry = false;
+
+  //       // ✅ Properly typed StatisticDefinition
+  //       const statDef = new StatisticDefinition({
+  //         statisticType: 'count',
+  //         onStatisticField: 'OBJECTID',
+  //         outStatisticFieldName: 'count',
+  //       });
+
+  //       query.outStatistics = [statDef];
+
+  //       try {
+  //         const result = await featureLayer.queryFeatures(query);
+  //         const count = result.features[0]?.attributes?.count ?? 0;
+  //         console.log(`✅ ${label}: ${count}`);
+  //         return count;
+  //       } catch (err) {
+  //         console.error(`❌ Error in query [${label}]:`, err);
+  //         return 0;
+  //       }
+  //     };
+
+  //     try {
+  //       const [nullAndAbove20Count, totalCount] = await Promise.all([
+  //         runQuery('isValid = 0', 'Null & Above 20 Count'),
+  //         runQuery('1=1', 'Total Count'),
+  //       ]);
+
+  //       const stats: ParcelStats = { nullAndAbove20Count, totalCount };
+  //       console.log('📊 Final Stats:', stats);
+  //       return stats;
+  //     } catch (error) {
+  //       console.error('❌ Error getting parcel stats:', error);
+  //       return { nullAndAbove20Count: 0, totalCount: 0 };
+  //     }
+  //   }
+  //   async getStatsFromServer(): Promise<{
+  //     total: number;
+  //     nullAndAbove20Count: number;
+  //     t3dyatwithoutAhkam?: number;
+  //     planedParcelsCount?: number;
+  //   }> {
+  //     const baseUrl =
+  //       featureLayersConfig[7].url + '/query' ||
+  //       'https://144.76.146.59:6443/arcgis/rest/services/mecca/mekkah04091orbits/MapServer/68/query';
+  //     const base2Url = featureLayersConfig[11].url + '/query';
+  //     console.log('baseUrl', base2Url);
+
+  //     // ✅ Corrected: use parce_1010 (not parcel_1010)
+  //     // ✅ Check if parcel_993 is NULL or an empty string
+  //     const query1 = 'newValid = 0';
+  //     const query2 = '1=1'; // for total count
+  //     const query3 = 'isValid = 0';
+
+  //     const buildUrl = (where: string) =>
+  //       `${baseUrl}?where=${encodeURIComponent(
+  //         where
+  //       )}&returnCountOnly=true&f=json`;
+
+  //     const buildUrl2 = (where: string) =>
+  //       `${base2Url}?where=${encodeURIComponent(
+  //         where
+  //       )}&returnCountOnly=true&f=json`;
+  //     try {
+  //       // Fetch both counts in parallel
+  //       const [res1, res2, res3, res4] = await Promise.all([
+  //         fetch(buildUrl(query1)),
+  //         fetch(buildUrl(query2)),
+  //         fetch(buildUrl(query3)),
+  //         fetch(buildUrl2(query2)),
+  //       ]);
+  //       console.log('new urllll', buildUrl(query2));
+
+  //       const [data1, data2, data3, data4] = await Promise.all([
+  //         res1.json(),
+  //         res2.json(),
+  //         res3.json(),
+  //         res4.json(),
+  //       ]);
+
+  //       console.log('Query 1 URL:', buildUrl(query1));
+  //       console.log('Query 1 Response:', data1);
+  //       console.log('Query 2 URL:', buildUrl(query2));
+  //       console.log('Query 4 Response:', data4.count);
+
+  //       return {
+  //         total: data2.count || 0,
+  //         nullAndAbove20Count: data1.count || 0,
+  //         t3dyatwithoutAhkam: data3.count || 0,
+  //         planedParcelsCount: data4.count || 0,
+  //       };
+  //     } catch (error) {
+  //       console.error('Error fetching stats from ArcGIS Server:', error);
+  //       return { total: 0, nullAndAbove20Count: 0 };
+  //     }
+  //   }
 }

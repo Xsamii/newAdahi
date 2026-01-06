@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { StatCardComponent } from '../../shared/components/stat-card/stat-card.component';
 import { CardComponent } from '../../shared/components/card/card.component';
-import { UtilityInfo, TotalStats } from '../../core/models/tunnel.model';
+import { UtilityInfo, TotalStats, AssetStats, AssetCategory } from '../../core/models/tunnel.model';
 import {
   TunnelStatistics,
   TunnelCategory,
@@ -39,6 +39,15 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   totalStats: TotalStats = { totalAssets: 0, totalNotes: 0 };
   inspectionTypeStats: { name: string; count: number }[] = [];
   dangerLevelStats: { name: string; count: number }[] = [];
+
+  // Asset-specific properties
+  assetStats: AssetStats = {
+    totalAssets: 0,
+    categories: new Map(),
+    types: new Map(),
+    subTypes: new Map(),
+  };
+  assetCategories: AssetCategory[] = [];
 
   private exportSubscription?: Subscription;
 
@@ -85,17 +94,27 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   loadData(): void {
-    this.dashboardService.tunnlesData.subscribe((v) => {
-      console.log('vvv', v);
-      const totalLength = v.reduce((sum, tunnel) => {
-        return sum + (tunnel.الطول_كم || 0);
-      }, 0);
-      this.statistics.totalTunnels = v.length;
-      this.statistics.totalLength = String(Math.round(totalLength * 10) / 10);
+    // Subscribe to asset data
+    this.dashboardService.assetsData.subscribe((assets) => {
+      console.log('Assets loaded:', assets.length);
+      this.statistics.totalAssets = assets.length;
+    });
+
+    // Subscribe to asset statistics
+    this.dashboardService.assetStats.subscribe((stats) => {
+      console.log('Asset stats:', stats);
+      this.assetStats = stats;
+      this.statistics.totalAssets = stats.totalAssets;
+    });
+
+    // Subscribe to asset categories (Equipment_Category values)
+    this.dashboardService.assetCategories.subscribe((categories) => {
+      console.log('Asset categories:', categories);
+      this.assetCategories = categories;
     });
 
     this.dashboardService.onwers.subscribe((v) => {
-      console.log('owners', v);
+      console.log('categories', v);
       this.categories = v;
     });
     this.dashboardService.totalUtilityInof.subscribe((v) => {
