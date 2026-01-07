@@ -103,7 +103,7 @@ export class ReportService {
     htmlContent += `
       <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid rgb(229, 231, 235);">
         <p style="color: rgb(108, 117, 125); font-size: 11px; font-style: italic;">
-          تم إنشاء هذا التقرير تلقائياً من نظام الفحص البصري للطرق والأنفاق
+          تم إنشاء هذا التقرير تلقائياً من نظام منصة أصول مكة المكرمة
         </p>
       </div>
     `;
@@ -451,7 +451,7 @@ export class ReportService {
     pdf.setFontSize(9);
     pdf.setTextColor(108, 117, 125);
     pdf.setFont('helvetica', 'italic');
-    const footerText = 'تم إنشاء هذا التقرير تلقائياً من نظام الفحص البصري للطرق والأنفاق';
+    const footerText = 'تم إنشاء هذا التقرير تلقائياً من نظام منصة أصول مكة المكرمة';
     const footerWidth = pdf.getTextWidth(footerText);
     pdf.text(footerText, (pageWidth - footerWidth) / 2, footerY);
 
